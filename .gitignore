@@ -1,0 +1,29 @@
+# Dependencies & Build Output
+node_modules/
+__pycache__/
+*.pyc
+.pytest_cache/
+dist/
+build/
+.vite/
+
+# Environment Variables (jangan di-commit!)
+.env
+*.env
+
+# File .pkl (model hasil training — ukuran besar, upload manual)
+backend-python/models/*.pkl
+backend-python/scalers/*.pkl
+backend-python/reducers/*.pkl
+backend-python/kolom_asli.pkl
+backend-python/training_columns.pkl
+
+# OS & Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Logs
+*.log
+logs/
