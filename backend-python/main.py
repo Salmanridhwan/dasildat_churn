@@ -40,10 +40,23 @@ async def lifespan(app: FastAPI):
         # Kolom asli (19 fitur sebelum encoding)
         kolom_asli = joblib.load("kolom_asli.pkl")
 
-        # Kolom setelah one-hot encoding (dari training) — opsional
-        # training_columns = joblib.load("training_columns.pkl")
+        # Rekonstruksi kolom training dari dataset asli agar one-hot encoding align saat inferensi
+        import os
+        csv_path = os.path.join(os.path.dirname(__file__), "..", "WA_Fn-UseC_-Telco-Customer-Churn.csv")
+        if os.path.exists(csv_path):
+            raw_df = pd.read_csv(csv_path)
+            raw_df.drop(['customerID', 'Churn'], axis=1, errors='ignore', inplace=True)
+            raw_df['TotalCharges'] = pd.to_numeric(raw_df['TotalCharges'], errors='coerce')
+            raw_df['TotalCharges'].fillna(raw_df['TotalCharges'].median(), inplace=True)
+            for col in BINARY_COLS:
+                raw_df[col] = raw_df[col].map({"No": 0, "Yes": 1})
+            raw_df["gender"] = raw_df["gender"].map(GENDER_MAP)
+            raw_df = pd.get_dummies(raw_df, columns=MULTI_COLS)
+            training_columns = list(raw_df.columns)
+            print(f"✅ Semua model berhasil dimuat. Kolom training berhasil direkonstruksi: {len(training_columns)} fitur")
+        else:
+            print(f"⚠️  Dataset CSV tidak ditemukan di {csv_path}. Penyelarasan kolom mungkin gagal.")
 
-        print("✅ Semua model berhasil dimuat:", list(models.keys()))
     except FileNotFoundError as e:
         print(f"⚠️  File .pkl tidak ditemukan: {e}")
         print("   Pastikan semua file .pkl sudah ada di folder models/, scalers/, reducers/")
