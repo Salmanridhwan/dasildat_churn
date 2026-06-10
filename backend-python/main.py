@@ -47,18 +47,18 @@ async def lifespan(app: FastAPI):
             raw_df = pd.read_csv(csv_path)
             raw_df.drop(['customerID', 'Churn'], axis=1, errors='ignore', inplace=True)
             raw_df['TotalCharges'] = pd.to_numeric(raw_df['TotalCharges'], errors='coerce')
-            raw_df['TotalCharges'].fillna(raw_df['TotalCharges'].median(), inplace=True)
+            raw_df['TotalCharges'] = raw_df['TotalCharges'].fillna(raw_df['TotalCharges'].median())
             for col in BINARY_COLS:
                 raw_df[col] = raw_df[col].map({"No": 0, "Yes": 1})
             raw_df["gender"] = raw_df["gender"].map(GENDER_MAP)
             raw_df = pd.get_dummies(raw_df, columns=MULTI_COLS)
             training_columns = list(raw_df.columns)
-            print(f"✅ Semua model berhasil dimuat. Kolom training berhasil direkonstruksi: {len(training_columns)} fitur")
+            print(f"[OK] Semua model berhasil dimuat. Kolom training berhasil direkonstruksi: {len(training_columns)} fitur")
         else:
-            print(f"⚠️  Dataset CSV tidak ditemukan di {csv_path}. Penyelarasan kolom mungkin gagal.")
+            print(f"[WARNING] Dataset CSV tidak ditemukan di {csv_path}. Penyelarasan kolom mungkin gagal.")
 
     except FileNotFoundError as e:
-        print(f"⚠️  File .pkl tidak ditemukan: {e}")
+        print(f"[WARNING] File .pkl tidak ditemukan: {e}")
         print("   Pastikan semua file .pkl sudah ada di folder models/, scalers/, reducers/")
     yield
     # Cleanup saat shutdown (opsional)
