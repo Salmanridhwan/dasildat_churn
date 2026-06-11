@@ -44,7 +44,7 @@ export default function Layout() {
 
       <footer className="footer">
         <div className="footer-content">
-          <p>© 2025 Kelompok Tubes Dasildat | Universitas Telkom</p>
+          <p>© 2026 Kelompok Tubes Dasildat | Universitas Telkom</p>
           <p className="footer-subtext">Mata Kuliah Dasar Ilmu Data</p>
         </div>
       </footer>
