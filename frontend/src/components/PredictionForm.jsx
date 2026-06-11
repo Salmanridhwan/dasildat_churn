@@ -66,7 +66,7 @@ function PredictionForm({ onSubmit, onReset, loading }) {
     setFormData(prev => ({
       ...prev,
       [name]: name === 'SeniorCitizen' || name === 'tenure' || name === 'MonthlyCharges' || name === 'TotalCharges'
-        ? Number(value)
+        ? (value === '' ? '' : Number(value))
         : value
     }))
     // Hapus error saat user mengedit
