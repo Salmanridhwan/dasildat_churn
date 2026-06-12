@@ -1,0 +1,11 @@
+services:
+  # Python FastAPI Backend (Machine Learning)
+  - type: web
+    name: churn-python-api
+    env: python
+    region: singapore
+    repo: https://github.com/your-username/your-repo # GANTI DENGAN URL REPO GITHUB KAMU
+    branch: main
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn api.index:app --host 0.0.0.0 --port $PORT
+    plan: free
