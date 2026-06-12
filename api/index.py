@@ -1,6 +1,5 @@
 import os
 import joblib
-import pandas as pd
 import numpy as np
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -96,23 +95,40 @@ class PredictResponse(BaseModel):
     model_used:  str
 
 def preprocess(raw_data: dict, model_choice: str) -> np.ndarray:
-    df = pd.DataFrame([raw_data])
     kolom_asli = get_kolom_asli()
 
     for col in kolom_asli:
-        if col not in df.columns:
+        if col not in raw_data:
             raise HTTPException(status_code=400, detail=f"Field '{col}' tidak ditemukan")
 
-    df = df[kolom_asli]
-    df["gender"] = df["gender"].map(GENDER_MAP)
-    for col in BINARY_COLS:
-        df[col] = df[col].map({"No": 0, "Yes": 1})
+    # Inisialisasi array 0 sepanjang TRAINING_COLUMNS
+    row = np.zeros(len(TRAINING_COLUMNS))
+    col_idx = {col: i for i, col in enumerate(TRAINING_COLUMNS)}
 
-    df = pd.get_dummies(df, columns=MULTI_COLS)
-    df = df.reindex(columns=TRAINING_COLUMNS, fill_value=0)
+    # 1. Numerikal
+    for num_col in ['SeniorCitizen', 'tenure', 'MonthlyCharges', 'TotalCharges']:
+        # Konversi ke float, beri default 0 jika kosong
+        val = raw_data[num_col]
+        row[col_idx[num_col]] = float(val) if val not in ["", None] else 0.0
+
+    # 2. Gender
+    row[col_idx['gender']] = GENDER_MAP.get(raw_data['gender'], 0)
+
+    # 3. Binary (Yes=1, No=0)
+    for bin_col in BINARY_COLS:
+        row[col_idx[bin_col]] = 1.0 if raw_data[bin_col] == "Yes" else 0.0
+
+    # 4. Multi (One-Hot Encoding manual tanpa Pandas)
+    for multi_col in MULTI_COLS:
+        val = raw_data[multi_col]
+        dummy_col_name = f"{multi_col}_{val}"
+        if dummy_col_name in col_idx:
+            row[col_idx[dummy_col_name]] = 1.0
+
+    X = np.array([row])
 
     scaler = get_scaler(model_choice)
-    X = scaler.transform(df)
+    X = scaler.transform(X)
 
     reducer = get_reducer(model_choice)
     if hasattr(reducer, "transform"):
