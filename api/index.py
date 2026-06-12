@@ -44,8 +44,8 @@ def get_kolom_asli():
 
 # Hardcode kolom training agar efisien
 TRAINING_COLUMNS = [
-    'SeniorCitizen', 'tenure', 'MonthlyCharges', 'TotalCharges', 'gender',
-    'Partner', 'Dependents', 'PhoneService', 'PaperlessBilling',
+    'gender', 'SeniorCitizen', 'Partner', 'Dependents', 'tenure', 
+    'PhoneService', 'PaperlessBilling', 'MonthlyCharges', 'TotalCharges', 
     'MultipleLines_No', 'MultipleLines_No phone service', 'MultipleLines_Yes',
     'InternetService_DSL', 'InternetService_Fiber optic', 'InternetService_No',
     'OnlineSecurity_No', 'OnlineSecurity_No internet service', 'OnlineSecurity_Yes',
