@@ -1,10 +1,8 @@
 import os
+import json
 import joblib
 import numpy as np
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import Any, Dict
+from http.server import BaseHTTPRequestHandler
 
 # ─────────────────────────────────────────────
 # Lazy Loading Storage
@@ -58,24 +56,6 @@ TRAINING_COLUMNS = [
     'PaymentMethod_Electronic check', 'PaymentMethod_Mailed check'
 ]
 
-app = FastAPI(
-    title="Telco Churn ML Engine (Vercel Serverless)",
-    description="API inferensi model ML dengan lazy-loading",
-    version="2.0.0"
-)
-
-# CORS — izinkan Vercel dan lokal
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"], # Buka ke semua di serverless agar mudah
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# ─────────────────────────────────────────────
-# Konstanta Encoding
-# ─────────────────────────────────────────────
-
 BINARY_COLS = ["Partner", "Dependents", "PhoneService", "PaperlessBilling"]
 GENDER_MAP = {"Female": 0, "Male": 1}
 MULTI_COLS = [
@@ -84,43 +64,27 @@ MULTI_COLS = [
     "StreamingTV", "StreamingMovies", "Contract", "PaymentMethod"
 ]
 
-class PredictRequest(BaseModel):
-    model_choice: str
-    data: Dict[str, Any]
-
-class PredictResponse(BaseModel):
-    prediction:  int
-    probability: list
-    label:       str
-    model_used:  str
-
 def preprocess(raw_data: dict, model_choice: str) -> np.ndarray:
     kolom_asli = get_kolom_asli()
 
     for col in kolom_asli:
         if col not in raw_data:
-            raise HTTPException(status_code=400, detail=f"Field '{col}' tidak ditemukan")
+            raise ValueError(f"Field '{col}' tidak ditemukan")
 
-    # Inisialisasi array 0 sepanjang TRAINING_COLUMNS
     row = np.zeros(len(TRAINING_COLUMNS))
     col_idx = {col: i for i, col in enumerate(TRAINING_COLUMNS)}
 
-    # 1. Numerikal
     for num_col in ['SeniorCitizen', 'tenure', 'MonthlyCharges', 'TotalCharges']:
-        # Konversi ke float, beri default 0 jika kosong
-        val = raw_data[num_col]
+        val = raw_data.get(num_col, 0)
         row[col_idx[num_col]] = float(val) if val not in ["", None] else 0.0
 
-    # 2. Gender
-    row[col_idx['gender']] = GENDER_MAP.get(raw_data['gender'], 0)
+    row[col_idx['gender']] = GENDER_MAP.get(raw_data.get('gender', ''), 0)
 
-    # 3. Binary (Yes=1, No=0)
     for bin_col in BINARY_COLS:
-        row[col_idx[bin_col]] = 1.0 if raw_data[bin_col] == "Yes" else 0.0
+        row[col_idx[bin_col]] = 1.0 if raw_data.get(bin_col) == "Yes" else 0.0
 
-    # 4. Multi (One-Hot Encoding manual tanpa Pandas)
     for multi_col in MULTI_COLS:
-        val = raw_data[multi_col]
+        val = raw_data.get(multi_col, '')
         dummy_col_name = f"{multi_col}_{val}"
         if dummy_col_name in col_idx:
             row[col_idx[dummy_col_name]] = 1.0
@@ -136,27 +100,70 @@ def preprocess(raw_data: dict, model_choice: str) -> np.ndarray:
 
     return X
 
-@app.get("/api/health")
-def health_check():
-    return {"status": "ok", "mode": "serverless"}
+class handler(BaseHTTPRequestHandler):
+    def _send_cors_headers(self):
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
 
-@app.post("/api/predict", response_model=PredictResponse)
-def predict(req: PredictRequest):
-    model_choice = req.model_choice.upper()
-    if model_choice not in ["KNN", "NN", "SVM"]:
-        raise HTTPException(status_code=400, detail="Pilih antara: KNN, NN, SVM")
+    def do_OPTIONS(self):
+        self.send_response(200, "ok")
+        self._send_cors_headers()
+        self.end_headers()
 
-    try:
-        X = preprocess(req.data, model_choice)
-        model = get_model(model_choice)
-        prediction = int(model.predict(X)[0])
-        probability = model.predict_proba(X)[0].tolist()
+    def do_GET(self):
+        if self.path == '/api/health':
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self._send_cors_headers()
+            self.end_headers()
+            self.wfile.write(json.dumps({"status": "ok", "mode": "native-serverless"}).encode('utf-8'))
+        else:
+            self.send_response(404)
+            self.end_headers()
 
-        return PredictResponse(
-            prediction=prediction,
-            probability=probability,
-            label="Churn" if prediction == 1 else "Tidak Churn",
-            model_used=model_choice
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Inference error: {str(e)}")
+    def do_POST(self):
+        if self.path not in ['/api/predict', '/api/index.py']:
+            self.send_response(404)
+            self.end_headers()
+            return
+
+        try:
+            content_length = int(self.headers.get('Content-Length', 0))
+            post_data = self.rfile.read(content_length)
+            req = json.loads(post_data)
+
+            model_choice = req.get("model_choice", "").upper()
+            if model_choice not in ["KNN", "NN", "SVM"]:
+                raise ValueError("Pilih model antara: KNN, NN, SVM")
+
+            X = preprocess(req.get("data", {}), model_choice)
+            model = get_model(model_choice)
+            prediction = int(model.predict(X)[0])
+            probability = model.predict_proba(X)[0].tolist()
+
+            response_data = {
+                "prediction": prediction,
+                "probability": probability,
+                "label": "Churn" if prediction == 1 else "Tidak Churn",
+                "model_used": model_choice
+            }
+
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self._send_cors_headers()
+            self.end_headers()
+            self.wfile.write(json.dumps(response_data).encode('utf-8'))
+
+        except Exception as e:
+            self.send_response(400)
+            self.send_header('Content-type', 'application/json')
+            self._send_cors_headers()
+            self.end_headers()
+            self.wfile.write(json.dumps({"detail": str(e)}).encode('utf-8'))
+
+if __name__ == '__main__':
+    from http.server import HTTPServer
+    server = HTTPServer(('127.0.0.1', 8000), handler)
+    print("Starting native server on http://127.0.0.1:8000")
+    server.serve_forever()
