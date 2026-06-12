@@ -6,9 +6,9 @@ export default defineConfig({
   server: {
     port: 3000,
     proxy: {
-      // Proxy /api ke Node.js gateway saat development
+      // Proxy /api ke Python FastAPI saat development lokal
       '/api': {
-        target: 'http://localhost:5000',
+        target: 'http://127.0.0.1:8000',
         changeOrigin: true,
       }
     }
