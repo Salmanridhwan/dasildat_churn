@@ -42,35 +42,76 @@ export default function Predict() {
   };
 
   return (
-    <div className="predict-container">
-      <div className="page-header predict-header">
+    <div className="predict-container-v2">
+
+      {/* ── Page Header ── */}
+      <div className="predict-header-v2">
         <div>
           <h1 className="page-title">Mesin Prediksi</h1>
-          <p className="page-subtitle">Pilih model ML dan masukkan profil pelanggan.</p>
-        </div>
-        <div className="model-selector-wrapper">
-          <ModelSelector value={modelChoice} onChange={setModelChoice} />
+          <p className="page-subtitle">Pilih model ML dan masukkan profil pelanggan untuk memprediksi kemungkinan churn.</p>
         </div>
       </div>
 
-      <div className="predict-content">
-        <PredictionForm
-          onSubmit={handleSubmit}
-          onReset={handleReset}
-          loading={loading}
-        />
+      {/* ── Side-by-side Layout ── */}
+      <div className="predict-split-layout">
 
-        {error && (
-          <div className="toast-error">
-            ⚠️ {error}
+        {/* LEFT — Form Input */}
+        <main className="predict-right-panel">
+          <div className="panel-heading">
+            <span className="panel-icon">📋</span>
+            <h3>Profil Pelanggan</h3>
           </div>
-        )}
+          <PredictionForm
+            onSubmit={handleSubmit}
+            onReset={handleReset}
+            loading={loading}
+            modelChoice={modelChoice}
+            onModelChange={setModelChoice}
+          />
+        </main>
 
-        {result && (
-          <div className="result-wrapper">
-            <ResultCard result={result} />
+        {/* RIGHT — Hasil Prediksi */}
+        <aside className="predict-left-panel">
+          <div className="panel-heading">
+            <span className="panel-icon">📈</span>
+            <h3>Hasil Prediksi</h3>
           </div>
-        )}
+
+          {!result && !error && !loading && (
+            <div className="empty-result-state">
+              <div className="empty-result-illustration">
+                <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+                  <circle cx="32" cy="32" r="30" stroke="rgba(99,102,241,0.3)" strokeWidth="2" strokeDasharray="6 4"/>
+                  <circle cx="32" cy="22" r="8" fill="rgba(99,102,241,0.15)" stroke="rgba(99,102,241,0.5)" strokeWidth="1.5"/>
+                  <path d="M16 46c0-8.837 7.163-16 16-16s16 7.163 16 16" stroke="rgba(99,102,241,0.5)" strokeWidth="1.5" strokeLinecap="round"/>
+                </svg>
+              </div>
+              <p className="empty-result-title">Belum Ada Prediksi</p>
+              <p className="empty-result-sub">Isi form profil pelanggan di sebelah kiri, lalu klik <strong>Prediksi Sekarang</strong>.</p>
+            </div>
+          )}
+
+          {loading && (
+            <div className="loading-result-state">
+              <div className="loading-spinner-lg" />
+              <p className="loading-text">Sedang menganalisis data...</p>
+              <p className="loading-sub">Model ML sedang memproses profil pelanggan</p>
+            </div>
+          )}
+
+          {error && (
+            <div className="toast-error" style={{ marginTop: 0 }}>
+              ⚠️ {error}
+            </div>
+          )}
+
+          {result && (
+            <div className="result-animate-in">
+              <ResultCard result={result} />
+            </div>
+          )}
+        </aside>
+
       </div>
     </div>
   );
