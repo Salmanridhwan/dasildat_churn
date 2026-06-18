@@ -44,20 +44,20 @@ const FORM_FIELDS = [
   { name: 'Dependents',      label: 'Punya Tanggungan',          type: 'select', options: ['No', 'Yes'] },
   { name: 'PhoneService',    label: 'Layanan Telepon',           type: 'select', options: ['No', 'Yes'] },
   { name: 'MultipleLines',   label: 'Banyak Saluran Telepon',    type: 'select', options: ['No', 'No phone service', 'Yes'] },
-  { name: 'InternetService', label: 'Provider Internet',         type: 'select', options: ['DSL', 'Fiber optic', 'No'] },
+  { name: 'InternetService', label: 'Provider Internet',         type: 'select', options: ['DSL', 'Fiber optic', 'No'], importantInfo: 'Pengguna Fiber Optic memiliki tren churn historis yang lebih tinggi.' },
   { name: 'OnlineSecurity',  label: 'Keamanan Online',           type: 'select', options: ['No', 'No internet service', 'Yes'] },
   { name: 'OnlineBackup',    label: 'Backup Online',             type: 'select', options: ['No', 'No internet service', 'Yes'] },
   { name: 'DeviceProtection',label: 'Proteksi Perangkat',        type: 'select', options: ['No', 'No internet service', 'Yes'] },
   { name: 'TechSupport',     label: 'Dukungan Teknis',           type: 'select', options: ['No', 'No internet service', 'Yes'] },
   { name: 'StreamingTV',     label: 'Streaming TV',              type: 'select', options: ['No', 'No internet service', 'Yes'] },
   { name: 'StreamingMovies', label: 'Streaming Film',            type: 'select', options: ['No', 'No internet service', 'Yes'] },
-  { name: 'Contract',        label: 'Jenis Kontrak',             type: 'select', options: ['Month-to-month', 'One year', 'Two year'] },
+  { name: 'Contract',        label: 'Jenis Kontrak',             type: 'select', options: ['Month-to-month', 'One year', 'Two year'], importantInfo: 'Kontrak bulanan sangat rentan terhadap churn dibandingkan kontrak jangka panjang.' },
   { name: 'PaperlessBilling',label: 'Tagihan Digital',           type: 'select', options: ['No', 'Yes'] },
   { name: 'PaymentMethod',   label: 'Metode Pembayaran',         type: 'select', options: ['Bank transfer (automatic)', 'Credit card (automatic)', 'Electronic check', 'Mailed check'] },
   // Numerik
-  { name: 'tenure',          label: 'Durasi Berlangganan (bln)', type: 'number', min: 0, max: 100, step: 1 },
-  { name: 'MonthlyCharges',  label: 'Biaya Bulanan (USD)',       type: 'number', min: 0, step: 0.01 },
-  { name: 'TotalCharges',    label: 'Total Biaya (USD)',         type: 'number', min: 0, step: 0.01 },
+  { name: 'tenure',          label: 'Durasi Berlangganan (bln)', type: 'number', min: 0, max: 100, step: 1, importantInfo: 'Pelanggan baru (tenure rendah) adalah kelompok paling berisiko untuk churn.' },
+  { name: 'MonthlyCharges',  label: 'Biaya Bulanan (USD)',       type: 'number', min: 0, step: 0.01, importantInfo: 'Biaya bulanan yang tinggi seringkali memicu keputusan untuk churn.' },
+  { name: 'TotalCharges',    label: 'Total Biaya (USD)',         type: 'number', min: 0, step: 0.01, importantInfo: 'Mencerminkan nilai retensi jangka panjang pelanggan.' },
 ]
 
 // ─── Jenis Prediksi: menentukan field mana yang ditampilkan ───
@@ -266,7 +266,20 @@ function PredictionForm({ onSubmit, onReset, loading, modelChoice, onModelChange
       <div className="form-grid">
         {visibleFields.map((field) => (
           <div className="form-field" key={field.name}>
-            <label htmlFor={`field-${field.name}`}>{field.label}</label>
+            <label 
+              htmlFor={`field-${field.name}`}
+              style={field.importantInfo ? { color: '#fbbf24', fontWeight: '600' } : {}}
+            >
+              {field.label}
+              {field.importantInfo && (
+                <span 
+                  title={field.importantInfo} 
+                  style={{ cursor: 'help', color: '#f59e0b', marginLeft: '6px', fontSize: '1.1em' }}
+                >
+                  ⓘ
+                </span>
+              )}
+            </label>
 
             {field.type === 'select' ? (
               <select

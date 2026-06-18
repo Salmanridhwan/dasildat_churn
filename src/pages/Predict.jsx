@@ -8,18 +8,22 @@ export default function Predict() {
   const [result, setResult]           = useState(null);
   const [loading, setLoading]         = useState(false);
   const [error, setError]             = useState(null);
+  const [lastSubmittedData, setLastSubmittedData] = useState(null);
 
-  const handleSubmit = async (formData) => {
+  const handleSubmit = async (formData, overrideModel = null) => {
     setLoading(true);
     setError(null);
     setResult(null);
+    setLastSubmittedData(formData);
+
+    const activeModel = overrideModel || modelChoice;
 
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
       const response = await fetch(`${apiUrl}/api/predict`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model_choice: modelChoice, data: formData })
+        body: JSON.stringify({ model_choice: activeModel, data: formData })
       });
 
       const data = await response.json();
@@ -36,9 +40,17 @@ export default function Predict() {
     }
   };
 
+  const handleModelChange = (newModel) => {
+    setModelChoice(newModel);
+    if (lastSubmittedData) {
+      handleSubmit(lastSubmittedData, newModel);
+    }
+  };
+
   const handleReset = () => {
     setResult(null);
     setError(null);
+    setLastSubmittedData(null);
   };
 
   return (
@@ -66,7 +78,7 @@ export default function Predict() {
             onReset={handleReset}
             loading={loading}
             modelChoice={modelChoice}
-            onModelChange={setModelChoice}
+            onModelChange={handleModelChange}
           />
         </main>
 
