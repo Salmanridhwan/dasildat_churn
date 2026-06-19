@@ -21,19 +21,19 @@ base_dir = os.path.dirname(os.path.abspath(__file__))
 
 def get_model(name: str):
     if name not in _cache["models"]:
-        file_map = {"KNN": "model_knn_pca.pkl", "NN": "model_nn.pkl", "SVM": "model_svm_pca.pkl"}
+        file_map = {"KNN": "model_knn_pca.pkl", "NN": "model_nn.pkl", "SVM": "model_svm_pca.pkl", "RF": "model_rf.pkl"}
         _cache["models"][name] = joblib.load(os.path.join(base_dir, "models", file_map[name]))
     return _cache["models"][name]
 
 def get_scaler(name: str):
     if name not in _cache["scalers"]:
-        file_map = {"KNN": "scaler_knn.pkl", "NN": "scaler_nn.pkl", "SVM": "scaler_svm.pkl"}
+        file_map = {"KNN": "scaler_knn.pkl", "NN": "scaler_nn.pkl", "SVM": "scaler_svm.pkl", "RF": "scaler_rf.pkl"}
         _cache["scalers"][name] = joblib.load(os.path.join(base_dir, "scalers", file_map[name]))
     return _cache["scalers"][name]
 
 def get_reducer(name: str):
     if name not in _cache["reducers"]:
-        file_map = {"KNN": "pca_knn.pkl", "NN": "rfe_nn.pkl", "SVM": "pca_svm.pkl"}
+        file_map = {"KNN": "pca_knn.pkl", "NN": "rfe_nn.pkl", "SVM": "pca_svm.pkl", "RF": "selector_rf.pkl"}
         _cache["reducers"][name] = joblib.load(os.path.join(base_dir, "reducers", file_map[name]))
     return _cache["reducers"][name]
 
@@ -123,8 +123,8 @@ def health_check():
 @app.post("/api/predict", response_model=PredictResponse)
 def predict(req: PredictRequest):
     model_choice = req.model_choice.upper()
-    if model_choice not in ["KNN", "NN", "SVM"]:
-        raise HTTPException(status_code=400, detail="Pilih antara: KNN, NN, SVM")
+    if model_choice not in ["KNN", "NN", "SVM", "RF"]:
+        raise HTTPException(status_code=400, detail="Pilih antara: KNN, NN, SVM, RF")
 
     try:
         X = preprocess(req.data, model_choice)

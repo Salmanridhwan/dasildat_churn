@@ -33,6 +33,13 @@ const MODELS = [
     icon: '⚡',
     desc: 'Memisahkan kelas dengan hyperplane optimal',
   },
+  {
+    value: 'RF',
+    label: 'Random Forest',
+    short: 'RF',
+    icon: '🌳',
+    desc: 'Ansambel decision trees untuk akurasi tinggi',
+  },
 ]
 
 // ─── Definisi semua 19 field sesuai PRD Section 4 ───
