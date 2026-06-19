@@ -29,7 +29,7 @@ export default function Predict() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Terjadi kesalahan pada server');
+        throw new Error(data.detail || data.error || 'Terjadi kesalahan pada server');
       }
 
       setResult(data);

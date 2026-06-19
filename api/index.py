@@ -105,7 +105,20 @@ def preprocess(raw_data: dict, model_choice: str) -> np.ndarray:
         df[col] = df[col].map({"No": 0, "Yes": 1})
 
     df = pd.get_dummies(df, columns=MULTI_COLS)
-    df = df.reindex(columns=TRAINING_COLUMNS, fill_value=0)
+
+    if model_choice == "RF":
+        RF_COLUMNS = ['SeniorCitizen', 'tenure', 'MonthlyCharges', 'TotalCharges', 'gender_Male', 'Partner_Yes', 'Dependents_Yes', 'PhoneService_Yes', 'MultipleLines_No phone service', 'MultipleLines_Yes', 'InternetService_Fiber optic', 'InternetService_No', 'OnlineSecurity_No internet service', 'OnlineSecurity_Yes', 'OnlineBackup_No internet service', 'OnlineBackup_Yes', 'DeviceProtection_No internet service', 'DeviceProtection_Yes', 'TechSupport_No internet service', 'TechSupport_Yes', 'StreamingTV_No internet service', 'StreamingTV_Yes', 'StreamingMovies_No internet service', 'StreamingMovies_Yes', 'Contract_One year', 'Contract_Two year', 'PaperlessBilling_Yes', 'PaymentMethod_Credit card (automatic)', 'PaymentMethod_Electronic check', 'PaymentMethod_Mailed check']
+        rename_map = {
+            'gender': 'gender_Male',
+            'Partner': 'Partner_Yes',
+            'Dependents': 'Dependents_Yes',
+            'PhoneService': 'PhoneService_Yes',
+            'PaperlessBilling': 'PaperlessBilling_Yes'
+        }
+        df = df.rename(columns=rename_map)
+        df = df.reindex(columns=RF_COLUMNS, fill_value=0)
+    else:
+        df = df.reindex(columns=TRAINING_COLUMNS, fill_value=0)
 
     scaler = get_scaler(model_choice)
     X = scaler.transform(df)
